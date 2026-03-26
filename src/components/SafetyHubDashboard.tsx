@@ -6,14 +6,18 @@ import {
   Card,
   H2,
   Flex,
-  Link,
   Pagination,
   Panel,
   Spinner,
   TextInput,
   Tooltip,
 } from "@procore/core-react";
-import { CopilotBranded } from "@procore/core-icons";
+import {
+  CopilotBranded,
+  EllipsisVertical,
+  Fullscreen,
+  Info,
+} from "@procore/core-icons";
 
 const cardTitleStyle = {
   margin: 0,
@@ -29,30 +33,6 @@ const cardHeaderStyle = {
   flexWrap: "wrap" as const,
   gap: 8,
 };
-const sectionLabelStyle = {
-  fontSize: "0.75rem",
-  fontWeight: 600,
-  color: "#666",
-  textTransform: "uppercase" as const,
-  letterSpacing: "0.5px",
-  marginBottom: 8,
-};
-const insightStyle = {
-  fontSize: "0.875rem",
-  color: "#444",
-  lineHeight: 1.5,
-  marginBottom: 16,
-};
-const chartPlaceholderStyle = {
-  height: 180,
-  background: "linear-gradient(180deg, #f0f4ff 0%, #e8ecf8 100%)",
-  borderRadius: 8,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  color: "#666",
-  fontSize: "0.875rem",
-};
 const legendStyle = {
   display: "flex",
   gap: 16,
@@ -61,6 +41,715 @@ const legendStyle = {
   color: "#666",
 };
 const legendItemStyle = { display: "flex", alignItems: "center", gap: 6 };
+const cardSubtitleStyle = {
+  fontSize: "0.8125rem",
+  color: "#888",
+  marginTop: 4,
+  marginBottom: 0,
+  fontWeight: 400 as const,
+};
+const quickFilterSelectStyle: React.CSSProperties = {
+  width: "100%",
+  padding: "10px 36px 10px 12px",
+  fontSize: "0.875rem",
+  border: "1px solid #ccc",
+  borderRadius: 8,
+  backgroundColor: "#fff",
+  color: "#333",
+  marginBottom: 8,
+  appearance: "none",
+  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 8L2 4h8z'/%3E%3C/svg%3E")`,
+  backgroundRepeat: "no-repeat",
+  backgroundPosition: "right 12px center",
+  cursor: "pointer",
+};
+
+const toolboxTalkListContainerStyle = {
+  border: "1px solid #e0e0e0",
+  borderRadius: 8,
+  overflow: "hidden" as const,
+};
+
+const TOOLBOX_TALKS = [
+  { title: "Fall Protection Basics", attended: 12, total: 15 },
+  { title: "Electrical Safety on Site", attended: 8, total: 10 },
+  { title: "Crane & Rigging Awareness", attended: 14, total: 14 },
+  { title: "Heat Stress Prevention", attended: 9, total: 12 },
+  { title: "Confined Space Entry", attended: 6, total: 11 },
+];
+
+const ORIENTATION_WEEKS = [
+  { title: "Week of Mar 1–7", attended: 18, total: 20 },
+  { title: "Week of Mar 8–14", attended: 15, total: 18 },
+  { title: "Week of Mar 15–21", attended: 22, total: 24 },
+  { title: "Week of Mar 22–28", attended: 11, total: 16 },
+  { title: "Week of Mar 29–31", attended: 7, total: 9 },
+];
+
+/** Demo series for stacked column chart (days). */
+const TIME_LOST_BY_MONTH = [
+  { month: "Jan", projected: 18, actual: 14 },
+  { month: "Feb", projected: 28, actual: 22 },
+  { month: "Mar", projected: 42, actual: 10 },
+  { month: "Apr", projected: 52, actual: 6 },
+] as const;
+
+const TIME_LOST_CHART = {
+  projected: "#1e6bd9",
+  actual: "#5c3d9e",
+  plotHeight: 176,
+  yMax: 80,
+} as const;
+
+/** Contractors: bottom → top stack (blue, purple, teal, brown). */
+const MANPOWER_CONTRACTORS = [
+  { key: "acme", label: "Acme Builders", color: "#1e6bd9" },
+  { key: "ridge", label: "Ridge Co.", color: "#5c3d9e" },
+  { key: "harbor", label: "Harbor Electric", color: "#2a9d8f" },
+  { key: "summit", label: "Summit Steel", color: "#8b6914" },
+] as const;
+
+/** Demo: incidents per contractor per day (9 days). */
+const INCIDENTS_PER_MANPOWER_BY_DAY = [
+  { day: "3/18", acme: 2, ridge: 1, harbor: 1, summit: 0 },
+  { day: "3/19", acme: 1, ridge: 2, harbor: 0, summit: 1 },
+  { day: "3/20", acme: 3, ridge: 0, harbor: 2, summit: 1 },
+  { day: "3/21", acme: 0, ridge: 1, harbor: 1, summit: 2 },
+  { day: "3/22", acme: 2, ridge: 2, harbor: 1, summit: 0 },
+  { day: "3/23", acme: 1, ridge: 0, harbor: 0, summit: 1 },
+  { day: "3/24", acme: 0, ridge: 1, harbor: 1, summit: 0 },
+  { day: "3/25", acme: 2, ridge: 1, harbor: 2, summit: 1 },
+  { day: "3/26", acme: 1, ridge: 3, harbor: 0, summit: 1 },
+] as const;
+
+const MANPOWER_LOG_CHART = {
+  plotHeight: 176,
+  yMax: 12,
+  lineColor: "#1e6bd9",
+} as const;
+
+/** Arc segments left → right: Open, In Progress, Complete (matches reference layout). */
+const HAZARD_GAUGE_ARC_SEGMENTS = [
+  { pct: 17, color: "#1976d2" },
+  { pct: 31, color: "#7b1fa2" },
+  { pct: 52, color: "#26a69a" },
+] as const;
+
+/** Legend row: Complete, In Progress, Open. */
+const HAZARD_GAUGE_LEGEND = [
+  { pct: 52, color: "#26a69a", label: "Complete" },
+  { pct: 31, color: "#7b1fa2", label: "In Progress" },
+  { pct: 17, color: "#1976d2", label: "Open" },
+] as const;
+
+function hazardGaugePolar(
+  cx: number,
+  cy: number,
+  r: number,
+  angle: number
+) {
+  return {
+    x: cx + r * Math.cos(angle),
+    y: cy - r * Math.sin(angle),
+  };
+}
+
+function DailyHazardSemiGauge({ projectTotal }: { projectTotal: number }) {
+  const cx = 120;
+  const cy = 112;
+  const r = 86;
+  const strokeWidth = 26;
+  const gap = 0.09;
+  const usable = Math.PI - 2 * gap;
+
+  let theta = Math.PI;
+  const arcPaths = HAZARD_GAUGE_ARC_SEGMENTS.map((seg, i) => {
+    const sweepAngle = (seg.pct / 100) * usable;
+    const start = theta;
+    const end = theta - sweepAngle;
+    const s = hazardGaugePolar(cx, cy, r, start);
+    const e = hazardGaugePolar(cx, cy, r, end);
+    theta = end - (i < HAZARD_GAUGE_ARC_SEGMENTS.length - 1 ? gap : 0);
+    const d = `M ${s.x} ${s.y} A ${r} ${r} 0 0 1 ${e.x} ${e.y}`;
+    return (
+      <path
+        key={`${seg.pct}-${seg.color}`}
+        d={d}
+        stroke={seg.color}
+        strokeWidth={strokeWidth}
+        strokeLinecap="round"
+        fill="none"
+      />
+    );
+  });
+
+  return (
+    <div
+      role="img"
+      aria-label={`Daily hazard assessments: ${projectTotal} project total. Complete ${HAZARD_GAUGE_LEGEND[0].pct} percent, In Progress ${HAZARD_GAUGE_LEGEND[1].pct} percent, Open ${HAZARD_GAUGE_LEGEND[2].pct} percent.`}
+      style={{
+        position: "relative",
+        width: "100%",
+        maxWidth: 288,
+        margin: "0 auto",
+        paddingTop: 8,
+      }}
+    >
+      <svg
+        viewBox="0 0 240 128"
+        width="100%"
+        height={128}
+        style={{ display: "block" }}
+        aria-hidden
+      >
+        {arcPaths}
+      </svg>
+      <div
+        style={{
+          position: "absolute",
+          left: "50%",
+          top: "62%",
+          transform: "translate(-50%, -50%)",
+          textAlign: "center",
+          pointerEvents: "none",
+        }}
+      >
+        <div
+          style={{
+            fontSize: "2rem",
+            fontWeight: 700,
+            color: "#1a1a1a",
+            lineHeight: 1.05,
+          }}
+        >
+          {projectTotal}
+        </div>
+        <div
+          style={{
+            fontSize: "0.8125rem",
+            color: "#888",
+            marginTop: 6,
+            fontWeight: 400,
+          }}
+        >
+          Project Total
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function HubCardListItem({
+  label,
+  attended,
+  total,
+  isLast,
+}: {
+  label: string;
+  attended: number;
+  total: number;
+  isLast?: boolean;
+}) {
+  return (
+    <li
+      style={{
+        padding: "12px 16px",
+        borderBottom: isLast ? "none" : "1px solid #eee",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        flexWrap: "wrap" as const,
+        gap: 8,
+      }}
+    >
+      <div>
+        <div
+          style={{
+            fontSize: "0.875rem",
+            fontWeight: 600,
+            color: "#1a1a1a",
+            marginBottom: 4,
+          }}
+        >
+          {label}
+        </div>
+        <div style={{ fontSize: "0.8125rem", color: "#666", lineHeight: 1.4 }}>
+          {attended} / {total} people attended
+        </div>
+      </div>
+      <Button variant="secondary" size="sm">
+        Action
+      </Button>
+    </li>
+  );
+}
+
+function IncidentsPerManpowerLogChart() {
+  const { plotHeight, yMax, lineColor } = MANPOWER_LOG_CHART;
+  const yTicks = [12, 9, 6, 3, 0];
+
+  const totals = INCIDENTS_PER_MANPOWER_BY_DAY.map(
+    (row) => row.acme + row.ridge + row.harbor + row.summit
+  );
+
+  return (
+    <div
+      role="img"
+      aria-label="Stacked column chart with total trend line: incidents per manpower log by day and contractor"
+      style={{ marginTop: 4 }}
+    >
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "row",
+          alignItems: "stretch",
+          gap: 8,
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: 20,
+            flexShrink: 0,
+            paddingBottom: 28,
+          }}
+        >
+          <span
+            style={{
+              writingMode: "vertical-rl",
+              transform: "rotate(180deg)",
+              fontSize: "0.6875rem",
+              color: "#888",
+              fontWeight: 600,
+              letterSpacing: "0.04em",
+            }}
+          >
+            number of Incidents
+          </span>
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div
+            style={{
+              position: "relative",
+              height: plotHeight,
+              marginBottom: 4,
+            }}
+          >
+            {yTicks.map((t) => (
+              <div
+                key={`mp-grid-${t}`}
+                style={{
+                  position: "absolute",
+                  left: 36,
+                  right: 0,
+                  top: `${((yMax - t) / yMax) * 100}%`,
+                  borderTop:
+                    t === 0 ? "1px solid #ccc" : "1px dashed #e0e0e0",
+                  pointerEvents: "none",
+                }}
+              />
+            ))}
+            <div
+              style={{
+                position: "absolute",
+                left: 0,
+                top: 0,
+                bottom: 0,
+                width: 32,
+                pointerEvents: "none",
+              }}
+            >
+              {yTicks.map((t) => (
+                <span
+                  key={`mp-yl-${t}`}
+                  style={{
+                    position: "absolute",
+                    right: 4,
+                    top: `${((yMax - t) / yMax) * 100}%`,
+                    transform: "translateY(-50%)",
+                    fontSize: "0.6875rem",
+                    color: "#999",
+                    lineHeight: 1,
+                  }}
+                >
+                  {t}
+                </span>
+              ))}
+            </div>
+            <div
+              style={{
+                position: "absolute",
+                left: 36,
+                right: 0,
+                bottom: 0,
+                top: 0,
+                display: "flex",
+                flexDirection: "row",
+                alignItems: "flex-end",
+                justifyContent: "space-between",
+                gap: 6,
+                paddingLeft: 2,
+                paddingRight: 2,
+              }}
+            >
+              {INCIDENTS_PER_MANPOWER_BY_DAY.map((row, dayIndex) => {
+                const total = totals[dayIndex];
+                const barH = (total / yMax) * plotHeight;
+                return (
+                  <div
+                    key={`${row.day}-${dayIndex}`}
+                    style={{
+                      flex: 1,
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      justifyContent: "flex-end",
+                      minWidth: 0,
+                      height: `${plotHeight}px`,
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: "100%",
+                        maxWidth: 44,
+                        height: barH,
+                        display: "flex",
+                        flexDirection: "column",
+                        justifyContent: "flex-end",
+                        overflow: "hidden",
+                        borderRadius: "0 0 4px 4px",
+                      }}
+                    >
+                      {MANPOWER_CONTRACTORS.map((c, ci) => {
+                        const v = row[c.key];
+                        return (
+                          <div
+                            key={c.key}
+                            style={{
+                              flex: Math.max(v, 0.001),
+                              minHeight: 0,
+                              background: c.color,
+                              borderRadius:
+                                ci === MANPOWER_CONTRACTORS.length - 1
+                                  ? "6px 6px 0 0"
+                                  : 0,
+                            }}
+                          />
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <svg
+              aria-hidden
+              style={{
+                position: "absolute",
+                left: 36,
+                right: 0,
+                top: 0,
+                height: plotHeight,
+                width: "calc(100% - 36px)",
+                overflow: "visible",
+                pointerEvents: "none",
+              }}
+              preserveAspectRatio="none"
+              viewBox="0 0 100 100"
+            >
+              <polyline
+                fill="none"
+                stroke={lineColor}
+                strokeWidth={1.25}
+                vectorEffect="non-scaling-stroke"
+                points={totals
+                  .map((tot, i) => {
+                    const n = totals.length;
+                    const xPct = ((i + 0.5) / n) * 100;
+                    const yPct = 100 - (tot / yMax) * 100;
+                    return `${xPct},${yPct}`;
+                  })
+                  .join(" ")}
+              />
+            </svg>
+            <div
+              aria-hidden
+              style={{
+                position: "absolute",
+                left: 36,
+                right: 0,
+                top: 0,
+                height: plotHeight,
+                pointerEvents: "none",
+              }}
+            >
+              {totals.map((tot, i) => {
+                const n = totals.length;
+                return (
+                  <div
+                    key={`mp-marker-${i}`}
+                    style={{
+                      position: "absolute",
+                      left: `${((i + 0.5) / n) * 100}%`,
+                      bottom: `${(tot / yMax) * 100}%`,
+                      width: 8,
+                      height: 8,
+                      marginLeft: -4,
+                      marginBottom: -4,
+                      borderRadius: "50%",
+                      background: "#fff",
+                      border: `2px solid ${lineColor}`,
+                      boxSizing: "border-box",
+                    }}
+                  />
+                );
+              })}
+            </div>
+          </div>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "row",
+              justifyContent: "space-between",
+              gap: 6,
+              paddingLeft: 40,
+              paddingRight: 2,
+              paddingTop: 8,
+            }}
+          >
+            {INCIDENTS_PER_MANPOWER_BY_DAY.map((row, i) => (
+              <div
+                key={`x-mp-${i}`}
+                style={{
+                  flex: 1,
+                  textAlign: "center",
+                  fontSize: "0.6875rem",
+                  color: "#666",
+                  minWidth: 0,
+                }}
+              >
+                {row.day}
+              </div>
+            ))}
+          </div>
+          <div
+            style={{
+              textAlign: "center",
+              fontSize: "0.6875rem",
+              color: "#999",
+              marginTop: 12,
+              paddingLeft: 28,
+            }}
+          >
+            days
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TimeLostToInjuryChart() {
+  const { plotHeight, yMax, projected: projColor, actual: actColor } =
+    TIME_LOST_CHART;
+  const yTicks = [80, 60, 40, 20, 0];
+
+  return (
+    <div
+      role="img"
+      aria-label="Stacked column chart: time lost to injury by month, projected work and actual work, in days"
+      style={{ marginTop: 4 }}
+    >
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "row",
+          alignItems: "stretch",
+          gap: 8,
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: 20,
+            flexShrink: 0,
+            paddingBottom: 28,
+          }}
+        >
+          <span
+            style={{
+              writingMode: "vertical-rl",
+              transform: "rotate(180deg)",
+              fontSize: "0.6875rem",
+              color: "#888",
+              fontWeight: 600,
+              letterSpacing: "0.04em",
+            }}
+          >
+            Days
+          </span>
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div
+            style={{
+              position: "relative",
+              height: plotHeight,
+              marginBottom: 4,
+            }}
+          >
+            {yTicks.map((t) => (
+              <div
+                key={`grid-${t}`}
+                style={{
+                  position: "absolute",
+                  left: 36,
+                  right: 0,
+                  top: `${((yMax - t) / yMax) * 100}%`,
+                  borderTop:
+                    t === 0 ? "1px solid #ccc" : "1px dashed #e0e0e0",
+                  pointerEvents: "none",
+                }}
+              />
+            ))}
+            <div
+              style={{
+                position: "absolute",
+                left: 0,
+                top: 0,
+                bottom: 0,
+                width: 32,
+                pointerEvents: "none",
+              }}
+            >
+              {yTicks.map((t) => (
+                <span
+                  key={`yl-${t}`}
+                  style={{
+                    position: "absolute",
+                    right: 4,
+                    top: `${((yMax - t) / yMax) * 100}%`,
+                    transform: "translateY(-50%)",
+                    fontSize: "0.6875rem",
+                    color: "#999",
+                    lineHeight: 1,
+                  }}
+                >
+                  {t}
+                </span>
+              ))}
+            </div>
+            <div
+              style={{
+                position: "absolute",
+                left: 36,
+                right: 0,
+                bottom: 0,
+                top: 0,
+                display: "flex",
+                flexDirection: "row",
+                alignItems: "flex-end",
+                justifyContent: "space-between",
+                gap: 12,
+                paddingLeft: 4,
+                paddingRight: 4,
+              }}
+            >
+              {TIME_LOST_BY_MONTH.map((row) => {
+                const total = row.projected + row.actual;
+                const barH = (total / yMax) * plotHeight;
+                return (
+                  <div
+                    key={row.month}
+                    style={{
+                      flex: 1,
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      justifyContent: "flex-end",
+                      minWidth: 0,
+                      height: `${plotHeight}px`,
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: "100%",
+                        maxWidth: 56,
+                        height: barH,
+                        display: "flex",
+                        flexDirection: "column",
+                        justifyContent: "flex-end",
+                        overflow: "hidden",
+                        borderRadius: "0 0 4px 4px",
+                      }}
+                    >
+                      <div
+                        style={{
+                          flex: row.projected,
+                          minHeight: 0,
+                          background: projColor,
+                          borderRadius: 0,
+                        }}
+                      />
+                      <div
+                        style={{
+                          flex: row.actual,
+                          minHeight: 0,
+                          background: actColor,
+                          borderRadius: "6px 6px 0 0",
+                        }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "row",
+              justifyContent: "space-between",
+              gap: 12,
+              paddingLeft: 40,
+              paddingRight: 4,
+              paddingTop: 8,
+            }}
+          >
+            {TIME_LOST_BY_MONTH.map((row) => (
+              <div
+                key={`x-${row.month}`}
+                style={{
+                  flex: 1,
+                  textAlign: "center",
+                  fontSize: "0.6875rem",
+                  color: "#666",
+                  minWidth: 0,
+                }}
+              >
+                {row.month}
+              </div>
+            ))}
+          </div>
+          <div
+            style={{
+              textAlign: "center",
+              fontSize: "0.6875rem",
+              color: "#999",
+              marginTop: 12,
+              paddingLeft: 28,
+            }}
+          >
+            Month
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const INITIAL_DOCS = [
   { name: "Standard Operating... company_sop.pdf", date: "Jul 17, 2025" },
@@ -102,25 +791,10 @@ export default function SafetyHubDashboard() {
 
   const docs = dataRefreshed ? REFRESHED_DOCS : INITIAL_DOCS;
   const personnel = dataRefreshed ? REFRESHED_PERSONNEL : INITIAL_PERSONNEL;
-  const timeToComplete = dataRefreshed
-    ? { project: "2.8", lastMonth: "3.8", industry: "1.7" }
-    : { project: "3.0", lastMonth: "4.0", industry: "1.9" };
-  const passRate = dataRefreshed
-    ? { project: "58%", company: "96%" }
-    : { project: "55%", company: "97%" };
-  const daysWithoutIncident = dataRefreshed
-    ? { recordable: "195", anyIncident: "38" }
-    : { recordable: "200", anyIncident: "40" };
-  const insightTime = dataRefreshed
-    ? "February"
-    : "March";
-  const deficientItems = dataRefreshed
-    ? "Inspection item #2 and Inspection item #4"
-    : "Inspection item #1 and Inspection item #2";
-  const incidentMessage = dataRefreshed
-    ? "Trending in the right direction. Keep reinforcing safety protocols."
-    : "Another day incident-free! Let's maintain this outstanding record!";
-
+  const claimedKpi = dataRefreshed
+    ? { value: "$892M", trend: "↓ 0.2%" }
+    : { value: "$924M", trend: "↓ 0.0%" };
+  const hazardProjectTotal = dataRefreshed ? 48 : 45;
   return (
     <div
       style={{
@@ -414,7 +1088,7 @@ export default function SafetyHubDashboard() {
           </Card>
           </div>
 
-          {/* Card 3: Incidents Over Time */}
+          {/* Card 3: Claimed to Date (KPI) */}
           <div style={{ position: "relative" }}>
             {cardsLoading && (
               <div
@@ -435,19 +1109,81 @@ export default function SafetyHubDashboard() {
           <Card shadowStrength={1} style={{ padding: 20 }}>
             <div style={cardHeaderStyle}>
               <H2 as="h3" style={cardTitleStyle}>
-                Incidents Over Time
+                Claimed to Date
               </H2>
-              <Button variant="secondary" size="sm">
-                View
-              </Button>
+              <Flex alignItems="center" gap="8px" wrap="wrap">
+                <Button variant="secondary" size="sm">
+                  Action
+                </Button>
+                <Button
+                  variant="tertiary"
+                  size="sm"
+                  icon={<EllipsisVertical />}
+                  aria-label="More options"
+                />
+              </Flex>
             </div>
-            <div style={chartPlaceholderStyle}>
-              Line chart: No. of Incidents (Nov – Apr)
+            <select
+              id="claimed-quick-filter"
+              style={quickFilterSelectStyle}
+              defaultValue="qf1"
+              aria-label="Quick Filter 1"
+            >
+              <option value="qf1">Quick Filter 1</option>
+              <option value="qf2">Quick Filter 2</option>
+            </select>
+            <div
+              style={{
+                padding: "28px 8px 20px",
+                textAlign: "center",
+              }}
+            >
+              <div
+                style={{
+                  fontSize: "0.875rem",
+                  fontWeight: 400,
+                  color: "#555",
+                  marginBottom: 12,
+                }}
+              >
+                Claimed to Date
+              </div>
+              <div
+                style={{
+                  display: "inline-flex",
+                  alignItems: "baseline",
+                  justifyContent: "center",
+                  flexWrap: "wrap" as const,
+                  gap: "10px 14px",
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: "2.125rem",
+                    fontWeight: 700,
+                    color: "#1a1a1a",
+                    letterSpacing: "-0.02em",
+                    lineHeight: 1.1,
+                  }}
+                >
+                  {claimedKpi.value}
+                </span>
+                <span
+                  style={{
+                    fontSize: "1rem",
+                    fontWeight: 600,
+                    color: "#c62828",
+                    lineHeight: 1.1,
+                  }}
+                >
+                  {claimedKpi.trend}
+                </span>
+              </div>
             </div>
           </Card>
           </div>
 
-          {/* Card 4: Inspections by Assignee */}
+          {/* Card 4: Orientation Attendance */}
           <div style={{ position: "relative" }}>
             {cardsLoading && (
               <div
@@ -467,44 +1203,84 @@ export default function SafetyHubDashboard() {
             )}
           <Card shadowStrength={1} style={{ padding: 20 }}>
             <div style={cardHeaderStyle}>
-              <H2 as="h3" style={cardTitleStyle}>
-                Inspections by Assignee
-              </H2>
-              <Button variant="secondary" size="sm">
-                View All
-              </Button>
-            </div>
-            <div style={legendStyle}>
-              <span style={legendItemStyle}>
+              <Flex alignItems="center" gap="8px" wrap="wrap">
+                <H2 as="h3" style={cardTitleStyle}>
+                  Orientation Attendance
+                </H2>
+                <Tooltip overlay="Attendance is tracked per weekly orientation window.">
+                  <button
+                    type="button"
+                    aria-label="Info"
+                    style={{
+                      background: "none",
+                      border: "none",
+                      padding: 4,
+                      cursor: "pointer",
+                      fontSize: "0.875rem",
+                      color: "#666",
+                      lineHeight: 1,
+                      display: "flex",
+                      alignItems: "center",
+                    }}
+                  >
+                    <Info />
+                  </button>
+                </Tooltip>
                 <span
                   style={{
-                    width: 10,
-                    height: 10,
-                    borderRadius: "50%",
-                    background: "#0066cc",
+                    fontSize: "0.75rem",
+                    fontWeight: 600,
+                    color: "#0d7a3e",
+                    background: "#e6f4ea",
+                    padding: "4px 10px",
+                    borderRadius: 999,
                   }}
+                >
+                  {ORIENTATION_WEEKS.length} weeks
+                </span>
+              </Flex>
+              <Flex alignItems="center" gap="4px" wrap="wrap">
+                <Button variant="secondary" size="sm">
+                  Action
+                </Button>
+                <Button
+                  variant="tertiary"
+                  size="sm"
+                  icon={<Fullscreen />}
+                  aria-label="Expand card"
                 />
-                Open
-              </span>
-              <span style={legendItemStyle}>
-                <span
-                  style={{
-                    width: 10,
-                    height: 10,
-                    borderRadius: "50%",
-                    background: "#cc3333",
-                  }}
+                <Button
+                  variant="tertiary"
+                  size="sm"
+                  icon={<EllipsisVertical />}
+                  aria-label="More options"
                 />
-                Closed
-              </span>
+              </Flex>
             </div>
-            <div style={chartPlaceholderStyle}>
-              Stacked bar chart: Inspections by assignee
+            <div style={toolboxTalkListContainerStyle}>
+              <ul
+                role="list"
+                style={{
+                  listStyle: "none",
+                  padding: 0,
+                  margin: 0,
+                }}
+              >
+                {ORIENTATION_WEEKS.map((week, index) => (
+                  <HubCardListItem
+                    key={week.title}
+                    label={week.title}
+                    attended={week.attended}
+                    total={week.total}
+                    isLast={index === ORIENTATION_WEEKS.length - 1}
+                  />
+                ))}
+              </ul>
             </div>
           </Card>
           </div>
 
-          {/* Card 5: Observations by Type */}
+          {/* Card 5: Time Lost to Injury */}
           <div style={{ position: "relative" }}>
             {cardsLoading && (
               <div
@@ -524,16 +1300,30 @@ export default function SafetyHubDashboard() {
             )}
           <Card shadowStrength={1} style={{ padding: 20 }}>
             <div style={cardHeaderStyle}>
-              <H2 as="h3" style={cardTitleStyle}>
-                Observations by Type
-              </H2>
-              <Flex gap="8px">
+              <div>
+                <H2 as="h3" style={cardTitleStyle}>
+                  Time Lost to Injury
+                </H2>
+                <p style={cardSubtitleStyle}>
+                  Projected vs. actual work capacity by month
+                </p>
+              </div>
+              <Flex alignItems="center" gap="4px" wrap="wrap">
                 <Button variant="secondary" size="sm">
-                  Quick Filter ▼
+                  Action
                 </Button>
-                <Button variant="secondary" size="sm">
-                  View All
-                </Button>
+                <Button
+                  variant="tertiary"
+                  size="sm"
+                  icon={<Fullscreen />}
+                  aria-label="Expand card"
+                />
+                <Button
+                  variant="tertiary"
+                  size="sm"
+                  icon={<EllipsisVertical />}
+                  aria-label="More options"
+                />
               </Flex>
             </div>
             <div style={legendStyle}>
@@ -543,10 +1333,10 @@ export default function SafetyHubDashboard() {
                     width: 10,
                     height: 10,
                     borderRadius: "50%",
-                    background: "#0066cc",
+                    background: TIME_LOST_CHART.projected,
                   }}
                 />
-                Due in &gt;7 Days
+                Projected Work
               </span>
               <span style={legendItemStyle}>
                 <span
@@ -554,193 +1344,259 @@ export default function SafetyHubDashboard() {
                     width: 10,
                     height: 10,
                     borderRadius: "50%",
-                    background: "#ff9800",
+                    background: TIME_LOST_CHART.actual,
                   }}
                 />
-                Due in 7 Days
+                Actual Work
               </span>
+            </div>
+            <TimeLostToInjuryChart />
+          </Card>
+          </div>
+
+          {/* Card 6: Toolbox Talk Attendance */}
+          <div style={{ position: "relative" }}>
+            {cardsLoading && (
+              <div
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  background: "rgba(255,255,255,0.85)",
+                  borderRadius: 8,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  zIndex: 1,
+                }}
+              >
+                <Spinner size="lg" />
+              </div>
+            )}
+          <Card shadowStrength={1} style={{ padding: 20 }}>
+            <div style={cardHeaderStyle}>
+              <Flex alignItems="center" gap="8px" wrap="wrap">
+                <H2 as="h3" style={cardTitleStyle}>
+                  Toolbox Talk Attendance
+                </H2>
+                <Tooltip overlay="Attendance is tracked per scheduled toolbox talk.">
+                  <button
+                    type="button"
+                    aria-label="Info"
+                    style={{
+                      background: "none",
+                      border: "none",
+                      padding: 4,
+                      cursor: "pointer",
+                      fontSize: "0.875rem",
+                      color: "#666",
+                      lineHeight: 1,
+                      display: "flex",
+                      alignItems: "center",
+                    }}
+                  >
+                    <Info />
+                  </button>
+                </Tooltip>
+                <span
+                  style={{
+                    fontSize: "0.75rem",
+                    fontWeight: 600,
+                    color: "#0d7a3e",
+                    background: "#e6f4ea",
+                    padding: "4px 10px",
+                    borderRadius: 999,
+                  }}
+                >
+                  {TOOLBOX_TALKS.length} talks
+                </span>
+              </Flex>
+              <Flex alignItems="center" gap="4px" wrap="wrap">
+                <Button variant="secondary" size="sm">
+                  Action
+                </Button>
+                <Button
+                  variant="tertiary"
+                  size="sm"
+                  icon={<Fullscreen />}
+                  aria-label="Expand card"
+                />
+                <Button
+                  variant="tertiary"
+                  size="sm"
+                  icon={<EllipsisVertical />}
+                  aria-label="More options"
+                />
+              </Flex>
+            </div>
+            <div style={toolboxTalkListContainerStyle}>
+              <ul
+                role="list"
+                style={{
+                  listStyle: "none",
+                  padding: 0,
+                  margin: 0,
+                }}
+              >
+                {TOOLBOX_TALKS.map((talk, index) => (
+                  <HubCardListItem
+                    key={talk.title}
+                    label={talk.title}
+                    attended={talk.attended}
+                    total={talk.total}
+                    isLast={index === TOOLBOX_TALKS.length - 1}
+                  />
+                ))}
+              </ul>
+            </div>
+          </Card>
+          </div>
+
+          {/* Card 7: Daily Hazard Assessments */}
+          <div style={{ position: "relative" }}>
+            {cardsLoading && (
+              <div
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  background: "rgba(255,255,255,0.85)",
+                  borderRadius: 8,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  zIndex: 1,
+                }}
+              >
+                <Spinner size="lg" />
+              </div>
+            )}
+          <Card shadowStrength={1} style={{ padding: 20 }}>
+            <div style={cardHeaderStyle}>
+              <H2 as="h3" style={cardTitleStyle}>
+                Daily Hazard Assessments
+              </H2>
+              <Flex alignItems="center" gap="8px" wrap="wrap">
+                <Button variant="secondary" size="sm">
+                  Action
+                </Button>
+                <Button
+                  variant="tertiary"
+                  size="sm"
+                  icon={<EllipsisVertical />}
+                  aria-label="More options"
+                />
+              </Flex>
+            </div>
+            <DailyHazardSemiGauge projectTotal={hazardProjectTotal} />
+            <div
+              style={{
+                ...legendStyle,
+                justifyContent: "center",
+                flexWrap: "wrap" as const,
+                marginTop: 4,
+                marginBottom: 0,
+                gap: "12px 20px",
+              }}
+            >
+              {HAZARD_GAUGE_LEGEND.map((item) => (
+                <span key={item.label} style={legendItemStyle}>
+                  <span
+                    style={{
+                      width: 10,
+                      height: 10,
+                      borderRadius: "50%",
+                      background: item.color,
+                      flexShrink: 0,
+                    }}
+                  />
+                  <span style={{ color: "#555", fontSize: "0.8125rem" }}>
+                    {item.pct}% {item.label}
+                  </span>
+                </span>
+              ))}
+            </div>
+          </Card>
+          </div>
+
+          {/* Card 8: Incidents per Manpower Log */}
+          <div style={{ position: "relative" }}>
+            {cardsLoading && (
+              <div
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  background: "rgba(255,255,255,0.85)",
+                  borderRadius: 8,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  zIndex: 1,
+                }}
+              >
+                <Spinner size="lg" />
+              </div>
+            )}
+          <Card shadowStrength={1} style={{ padding: 20 }}>
+            <div style={cardHeaderStyle}>
+              <div>
+                <H2 as="h3" style={cardTitleStyle}>
+                  Incidents per Manpower Log
+                </H2>
+                <p style={cardSubtitleStyle}>
+                  Incidents by contractor over the last nine days
+                </p>
+              </div>
+              <Flex alignItems="center" gap="4px" wrap="wrap">
+                <Button variant="secondary" size="sm">
+                  Action
+                </Button>
+                <Button
+                  variant="tertiary"
+                  size="sm"
+                  icon={<Fullscreen />}
+                  aria-label="Expand card"
+                />
+                <Button
+                  variant="tertiary"
+                  size="sm"
+                  icon={<EllipsisVertical />}
+                  aria-label="More options"
+                />
+              </Flex>
+            </div>
+            <div
+              style={{
+                ...legendStyle,
+                flexWrap: "wrap" as const,
+                gap: "8px 16px",
+              }}
+            >
+              {MANPOWER_CONTRACTORS.map((c) => (
+                <span key={c.key} style={legendItemStyle}>
+                  <span
+                    style={{
+                      width: 10,
+                      height: 10,
+                      borderRadius: "50%",
+                      background: c.color,
+                      flexShrink: 0,
+                    }}
+                  />
+                  {c.label}
+                </span>
+              ))}
               <span style={legendItemStyle}>
                 <span
                   style={{
-                    width: 10,
-                    height: 10,
-                    borderRadius: "50%",
-                    background: "#cc3333",
+                    width: 14,
+                    height: 2,
+                    background: MANPOWER_LOG_CHART.lineColor,
+                    flexShrink: 0,
                   }}
                 />
-                Overdue
+                Total incidents
               </span>
             </div>
-            <div style={chartPlaceholderStyle}>
-              Stacked bar chart: Observations by type
-            </div>
-          </Card>
-          </div>
-
-          {/* Card 6: Time to Complete Observations */}
-          <div style={{ position: "relative" }}>
-            {cardsLoading && (
-              <div
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  background: "rgba(255,255,255,0.85)",
-                  borderRadius: 8,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  zIndex: 1,
-                }}
-              >
-                <Spinner size="lg" />
-              </div>
-            )}
-          <Card shadowStrength={1} style={{ padding: 20 }}>
-            <div style={cardHeaderStyle}>
-              <H2 as="h3" style={cardTitleStyle}>
-                Time to Complete Observations
-              </H2>
-              <span style={{ color: "#666", cursor: "pointer" }}>⋯</span>
-            </div>
-            <div style={sectionLabelStyle}>Quick Insight</div>
-            <p style={insightStyle}>
-              ⚡ Your project&apos;s average time to complete Observations in{" "}
-              <strong>{insightTime}</strong> is <strong>{timeToComplete.project} days</strong> which is lower
-              than last month&apos;s <strong>{timeToComplete.lastMonth} days</strong>. The industry
-              average for projects of a similar value is <strong>{timeToComplete.industry} days</strong>
-              .
-            </p>
-            <div style={sectionLabelStyle}>
-              Average days to complete Observations
-            </div>
-            <div
-              style={{
-                display: "flex",
-                gap: 24,
-                marginBottom: 16,
-                fontSize: "0.875rem",
-              }}
-            >
-              <span>
-                Project <strong>{timeToComplete.project} days</strong>
-              </span>
-              <span>
-                Company <strong>2.5 days</strong>
-              </span>
-              <span>
-                Industry <strong>{timeToComplete.industry} days</strong>
-              </span>
-            </div>
-            <div style={chartPlaceholderStyle}>
-              Line chart: Days to complete (Jan–Jun)
-            </div>
-          </Card>
-          </div>
-
-          {/* Card 7: Inspection Item Pass Rate */}
-          <div style={{ position: "relative" }}>
-            {cardsLoading && (
-              <div
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  background: "rgba(255,255,255,0.85)",
-                  borderRadius: 8,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  zIndex: 1,
-                }}
-              >
-                <Spinner size="lg" />
-              </div>
-            )}
-          <Card shadowStrength={1} style={{ padding: 20 }}>
-            <div style={cardHeaderStyle}>
-              <H2 as="h3" style={cardTitleStyle}>
-                Inspection Item Pass Rate - Past 6 Months
-              </H2>
-              <span style={{ color: "#666", cursor: "pointer" }}>⋯</span>
-            </div>
-            <div style={sectionLabelStyle}>Quick Insight</div>
-            <p style={insightStyle}>
-              ⚡ The most common deficient Inspection items on this project are{" "}
-              <strong>{deficientItems}</strong>.
-            </p>
-            <div style={sectionLabelStyle}>Inspection item pass rate</div>
-            <div
-              style={{
-                display: "flex",
-                gap: 24,
-                marginBottom: 16,
-                fontSize: "0.875rem",
-              }}
-            >
-              <span>
-                Project average <strong>{passRate.project}</strong>
-              </span>
-              <span>
-                Company average <strong>{passRate.company}</strong>
-              </span>
-            </div>
-            <div style={chartPlaceholderStyle}>
-              Line chart: Project avg vs Company avg (Feb–Jun)
-            </div>
-          </Card>
-          </div>
-
-          {/* Card 8: Days Without an Incident */}
-          <div style={{ position: "relative" }}>
-            {cardsLoading && (
-              <div
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  background: "rgba(255,255,255,0.85)",
-                  borderRadius: 8,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  zIndex: 1,
-                }}
-              >
-                <Spinner size="lg" />
-              </div>
-            )}
-          <Card shadowStrength={1} style={{ padding: 20 }}>
-            <div style={cardHeaderStyle}>
-              <H2 as="h3" style={cardTitleStyle}>
-                Days Without an Incident
-              </H2>
-              <span style={{ color: "#666", cursor: "pointer" }}>⋯</span>
-            </div>
-            <div style={sectionLabelStyle}>Best Practice</div>
-            <p style={insightStyle}>
-              ⚡ Improve future outcomes by treating near-misses and minor
-              incidents as learning opportunities.
-            </p>
-            <div style={sectionLabelStyle}>Days without Incidents</div>
-            <div
-              style={{
-                display: "flex",
-                gap: 24,
-                marginBottom: 12,
-                fontSize: "0.875rem",
-              }}
-            >
-              <span>
-                Recordable <strong>{daysWithoutIncident.recordable}</strong>
-              </span>
-              <span>
-                Any incident <strong>{daysWithoutIncident.anyIncident}</strong>
-              </span>
-            </div>
-            <p style={{ ...insightStyle, marginBottom: 16 }}>
-              {incidentMessage}
-            </p>
-            <div style={{ textAlign: "right" }}>
-              <Link href="#">Go To Report</Link>
-            </div>
+            <IncidentsPerManpowerLogChart />
           </Card>
           </div>
         </div>
