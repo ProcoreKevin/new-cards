@@ -101,6 +101,14 @@ const TIME_LOST_CHART = {
   yMax: 80,
 } as const;
 
+/** Toolbox talks: full bar = total headcount; attended fill from bottom. */
+const TOOLBOX_TALK_CHART = {
+  attended: TIME_LOST_CHART.projected,
+  total: TIME_LOST_CHART.actual,
+  plotHeight: 176,
+  yMax: 20,
+} as const;
+
 /** Contractors: bottom → top stack (blue, purple, teal, brown). */
 const MANPOWER_CONTRACTORS = [
   { key: "acme", label: "Acme Builders", color: "#1e6bd9" },
@@ -744,6 +752,218 @@ function TimeLostToInjuryChart() {
             }}
           >
             Month
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ToolboxTalkAttendanceChart() {
+  const { plotHeight, yMax, attended: attendedColor, total: totalColor } =
+    TOOLBOX_TALK_CHART;
+  const yTicks = [20, 15, 10, 5, 0];
+
+  return (
+    <div
+      role="img"
+      aria-label="Column chart: each full bar is total scheduled headcount; blue fill from the bottom is attended count, per toolbox talk"
+      style={{ marginTop: 4 }}
+    >
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "row",
+          alignItems: "stretch",
+          gap: 8,
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: 20,
+            flexShrink: 0,
+            paddingBottom: 28,
+          }}
+        >
+          <span
+            style={{
+              writingMode: "vertical-rl",
+              transform: "rotate(180deg)",
+              fontSize: "0.6875rem",
+              color: "#888",
+              fontWeight: 600,
+              letterSpacing: "0.04em",
+            }}
+          >
+            People
+          </span>
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div
+            style={{
+              position: "relative",
+              height: plotHeight,
+              marginBottom: 4,
+            }}
+          >
+            {yTicks.map((t) => (
+              <div
+                key={`tt-grid-${t}`}
+                style={{
+                  position: "absolute",
+                  left: 36,
+                  right: 0,
+                  top: `${((yMax - t) / yMax) * 100}%`,
+                  borderTop:
+                    t === 0 ? "1px solid #ccc" : "1px dashed #e0e0e0",
+                  pointerEvents: "none",
+                }}
+              />
+            ))}
+            <div
+              style={{
+                position: "absolute",
+                left: 0,
+                top: 0,
+                bottom: 0,
+                width: 32,
+                pointerEvents: "none",
+              }}
+            >
+              {yTicks.map((t) => (
+                <span
+                  key={`tt-yl-${t}`}
+                  style={{
+                    position: "absolute",
+                    right: 4,
+                    top: `${((yMax - t) / yMax) * 100}%`,
+                    transform: "translateY(-50%)",
+                    fontSize: "0.6875rem",
+                    color: "#999",
+                    lineHeight: 1,
+                  }}
+                >
+                  {t}
+                </span>
+              ))}
+            </div>
+            <div
+              style={{
+                position: "absolute",
+                left: 36,
+                right: 0,
+                bottom: 0,
+                top: 0,
+                display: "flex",
+                flexDirection: "row",
+                alignItems: "flex-end",
+                justifyContent: "space-between",
+                gap: 8,
+                paddingLeft: 4,
+                paddingRight: 4,
+              }}
+            >
+              {TOOLBOX_TALKS.map((row) => {
+                const barH = (row.total / yMax) * plotHeight;
+                const attendedPct =
+                  row.total > 0 ? (row.attended / row.total) * 100 : 0;
+                return (
+                  <div
+                    key={row.title}
+                    style={{
+                      flex: 1,
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      justifyContent: "flex-end",
+                      minWidth: 0,
+                      height: `${plotHeight}px`,
+                    }}
+                  >
+                    <div
+                      style={{
+                        position: "relative",
+                        width: "100%",
+                        maxWidth: 56,
+                        height: barH,
+                        overflow: "hidden",
+                        borderRadius: "6px 6px 4px 4px",
+                      }}
+                    >
+                      <div
+                        style={{
+                          position: "absolute",
+                          inset: 0,
+                          background: totalColor,
+                        }}
+                        aria-hidden
+                      />
+                      <div
+                        style={{
+                          position: "absolute",
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          height: `${attendedPct}%`,
+                          background: attendedColor,
+                          borderRadius:
+                            row.attended >= row.total
+                              ? "6px 6px 4px 4px"
+                              : "0 0 4px 4px",
+                        }}
+                        aria-hidden
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "row",
+              justifyContent: "space-between",
+              gap: 8,
+              paddingLeft: 40,
+              paddingRight: 4,
+              paddingTop: 8,
+            }}
+          >
+            {TOOLBOX_TALKS.map((row) => (
+              <div
+                key={`tt-x-${row.title}`}
+                title={row.title}
+                style={{
+                  flex: 1,
+                  textAlign: "center",
+                  fontSize: "0.625rem",
+                  color: "#666",
+                  minWidth: 0,
+                  lineHeight: 1.15,
+                  display: "-webkit-box",
+                  WebkitLineClamp: 3,
+                  WebkitBoxOrient: "vertical",
+                  overflow: "hidden",
+                }}
+              >
+                {row.title}
+              </div>
+            ))}
+          </div>
+          <div
+            style={{
+              textAlign: "center",
+              fontSize: "0.6875rem",
+              color: "#999",
+              marginTop: 12,
+              paddingLeft: 28,
+            }}
+          >
+            Toolbox talk
           </div>
         </div>
       </div>
@@ -1428,26 +1648,31 @@ export default function SafetyHubDashboard() {
                 />
               </Flex>
             </div>
-            <div style={toolboxTalkListContainerStyle}>
-              <ul
-                role="list"
-                style={{
-                  listStyle: "none",
-                  padding: 0,
-                  margin: 0,
-                }}
-              >
-                {TOOLBOX_TALKS.map((talk, index) => (
-                  <HubCardListItem
-                    key={talk.title}
-                    label={talk.title}
-                    attended={talk.attended}
-                    total={talk.total}
-                    isLast={index === TOOLBOX_TALKS.length - 1}
-                  />
-                ))}
-              </ul>
+            <div style={legendStyle}>
+              <span style={legendItemStyle}>
+                <span
+                  style={{
+                    width: 10,
+                    height: 10,
+                    borderRadius: "50%",
+                    background: TOOLBOX_TALK_CHART.attended,
+                  }}
+                />
+                Attended
+              </span>
+              <span style={legendItemStyle}>
+                <span
+                  style={{
+                    width: 10,
+                    height: 10,
+                    borderRadius: "50%",
+                    background: TOOLBOX_TALK_CHART.total,
+                  }}
+                />
+                Total
+              </span>
             </div>
+            <ToolboxTalkAttendanceChart />
           </Card>
           </div>
 
